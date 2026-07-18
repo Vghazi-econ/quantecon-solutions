@@ -299,27 +299,70 @@ A weighting vector $w = (0.5, 0.3, 0.2)$ assigns regional importance weights.
 
 ### Hand calculation
 
-<!-- TODO -->
+**Task 1 — transpose.** $A$ is $2 \times 3$, so $A^\top$ is $3 \times 2$: rows become columns. Each row of $A^\top$ is one country's complete profile — e.g. row 1 is $(900,\ 2.3)$, Saudi Arabia's GDP and inflation. This is the standard econometric layout: rows are observations, columns are variables.
+
+**Task 2 — $Aw$.** Shape check: $(2 \times 3)(3 \times 1) = 2 \times 1$ ✓. Each element is an inner product of one row with the weights:
+
+$$
+\text{row}_1 \cdot w = 900 \times 0.5 + 420 \times 0.3 + 140 \times 0.2 = 450 + 126 + 28 = 604
+$$
+
+$$
+\text{row}_2 \cdot w = 2.3 \times 0.5 + 3.1 \times 0.3 + 2.8 \times 0.2 = 1.15 + 0.93 + 0.56 = 2.64
+$$
+
+So $Aw = (604,\ 2.64)$: the GCC's weighted regional GDP and weighted regional inflation.
+
+**Task 3 — $AA^\top$.** Shape check: $(2 \times 3)(3 \times 2) = 2 \times 2$ ✓ (inner 3s match and cancel). Element $(1,2)$ is row 1 · row 2:
+
+$$
+900 \times 2.3 + 420 \times 3.1 + 140 \times 2.8 = 2070 + 1302 + 392 = 3764
+$$
 
 ### Python
 
 ```python
-# TODO: your solution here
+import numpy as np
+
+A = np.array([[900.0, 420.0, 140.0],
+              [2.3,   3.1,   2.8]])
+w = np.array([0.5, 0.3, 0.2])
+
+# Task 1: transpose and its shape
+print("A.T =", "\n", A.T)
+print("shape =", A.T.shape)
+
+# Task 2: weighted regional averages
+print("Aw =", A @ w)
+
+# Task 3: A A^T, its shape, and element (1,2)
+AAt = A @ A.T
+print(AAt.shape)
+print(AAt[0, 1])   # maths element (1,2) — Python counts from 0
 ```
 
 **Output:**
 
 ```
-TODO
+A.T = 
+ [[900.    2.3]
+ [420.    3.1]
+ [140.    2.8]]
+shape = (3, 2)
+Aw = [604.     2.64]
+(2, 2)
+3764.0
 ```
 
 ### Verification
 
-<!-- TODO -->
+- All hand results (shape $3 \times 2$, $Aw = (604, 2.64)$, shape $2 \times 2$, element $3764$) match the code ✅
+- Shape lines checked before every product — inner dimensions must match and cancel ✅
+- Magnitude sanity check: hundreds × small weights must give hundreds ($604$ ✓); hundreds × single digits must give thousands ($3764$ ✓). Writing numbers without thousands separators (2070, not 2,070) avoids comma/decimal confusion.
 
 ### Economic interpretation
 
-<!-- TODO -->
+$Aw$ compresses a country-level data table into regional aggregates: 604 is GCC weighted GDP and 2.64 the GCC weighted inflation rate, with the weights encoding each economy's regional importance — the same construction the IMF uses for regional aggregates in the World Economic Outlook. Element $(1,2)$ of $AA^\top$, by contrast, is a computational ingredient without direct economic meaning: an uncentred cross-product of GDP and inflation becomes interpretable (as a covariance) only after subtracting means. Recognising which numbers carry economic meaning and which are intermediate machinery is part of reading matrix formulas fluently.
 
 ---
 

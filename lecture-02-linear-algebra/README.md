@@ -382,27 +382,74 @@ $$
 
 ### Hand calculation
 
-<!-- TODO -->
+**Task 1 — the spaces.** $A$ is $3 \times 2$: input dimension = number of columns, output dimension = number of rows, so $f: \mathbb{R}^2 \to \mathbb{R}^3$ — two policy instruments in, three outcomes out.
+
+**Task 2 — $f(x)$ for $x = (2, 1)$, one inner product per row:**
+
+$$
+\text{GDP: } 0.8 \times 2 + (-0.3) \times 1 = 1.6 - 0.3 = 1.3
+$$
+
+$$
+\text{Employment: } 0.5 \times 2 + 0.1 \times 1 = 1.0 + 0.1 = 1.1
+$$
+
+$$
+\text{Inflation: } 0.2 \times 2 + (-0.4) \times 1 = 0.4 - 0.4 = 0
+$$
+
+**Task 3 — additivity with $y = (0, 3)$.** First $x + y = (2, 4)$, then:
+
+$$
+A(x+y) = (1.6 - 1.2,\ \ 1.0 + 0.4,\ \ 0.4 - 1.6) = (0.4,\ 1.4,\ -1.2)
+$$
+
+$$
+Ay = (-0.9,\ 0.3,\ -1.2), \qquad Ax + Ay = (1.3 - 0.9,\ \ 1.1 + 0.3,\ \ 0 - 1.2) = (0.4,\ 1.4,\ -1.2)
+$$
+
+Equal ✓ — additivity holds, as it must for every matrix map.
 
 ### Python
 
 ```python
-# TODO: your solution here
+import numpy as np
+
+A = np.array([[0.8, -0.3],
+              [0.5,  0.1],
+              [0.2, -0.4]])
+x = np.array([2, 1])      # the policy input from the problem
+y = np.array([0, 3])
+
+# Task 2: the policy effect
+print("Ax =", A @ x)
+
+# Task 3: additivity
+lhs = A @ (x + y)
+rhs = A @ x + A @ y
+print("A(x+y) =", lhs)
+print("Ax + Ay =", rhs)
+print(np.allclose(lhs, rhs))
 ```
 
 **Output:**
 
 ```
-TODO
+Ax = [1.3 1.1 0. ]
+A(x+y) = [ 0.4  1.4 -1.2]
+Ax + Ay = [ 0.4  1.4 -1.2]
+True
 ```
 
 ### Verification
 
-<!-- TODO -->
+- Hand results match the code for all three vectors ✅
+- Additivity is a theorem for matrix maps — it cannot fail. A first hand attempt produced "not equal", which correctly signalled arithmetic errors (a misplaced decimal in $(-0.3) \times 4$ and a sign slip in $1.3 + (-0.9)$) rather than a failure of the identity. When an identity appears to fail, hunt for the arithmetic error.
+- Sign check: adding a negative number means subtracting — $1.3 + (-0.9) = 0.4$, not $2.2$.
 
 ### Economic interpretation
 
-<!-- TODO -->
+The matrix is a policy machine: feed in instruments (2 points of extra spending, a 1-point rate rise) and it returns outcomes — GDP up 1.3 points, employment up 1.1, and inflation exactly unchanged because the inflationary push of spending ($0.2 \times 2$) is precisely cancelled by the rate rise ($-0.4 \times 1$). A zero in economics is rarely "no effect"; it is usually two forces cancelling. Additivity is the deeper economic claim of linearity: the combined effect of two policy packages equals the sum of their separate effects — true in this linear world, but only an approximation in reality, where large interventions interact.
 
 ---
 

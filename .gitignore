@@ -1,0 +1,8 @@
+qe_env/
+__pycache__/
+.DS_Store
+*.pyc.DS_Store
+__pycache__/
+.ipynb_checkpoints/
+quantitative/
+lecture-02-linear-algebra/

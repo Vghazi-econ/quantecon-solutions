@@ -482,10 +482,10 @@ $$
 
 **Translation check** — multiplying each row of $A$ by $x$ must reproduce the original equation:
 
-| Row | Row of $A$ times $x$ | Equals | Original equation |
-| --- | --- | --- | --- |
-| 1 | $3Y + (-2)r = 3Y - 2r$ | 100 | Goods market ✓ |
-| 2 | $1Y + 4r = Y + 4r$ | 80 | Money market ✓ |
+| Row | Row of$A$ times $x$  | Equals | Original equation |
+| --- | ------------------------ | ------ | ----------------- |
+| 1   | $3Y + (-2)r = 3Y - 2r$ | 100    | Goods market ✓   |
+| 2   | $1Y + 4r = Y + 4r$     | 80     | Money market ✓   |
 
 **Task 2 — the determinant, one stage per line.** For $A = \begin{bmatrix} a & b \\ c & d \end{bmatrix}$, $\det(A) = ad - bc$, with $a = 3$, $b = -2$, $c = 1$, $d = 4$:
 
@@ -493,7 +493,9 @@ $$
 2. $bc = (-2) \times 1 = -2$
 3. $ad - bc = 12 - (-2) = 12 + 2 = 14$
 
-$$\det(A) = 14 \neq 0$$
+$$
+\det(A) = 14 \neq 0
+$$
 
 Because the determinant is nonzero, $A$ is invertible and the system has **exactly one** solution. Stage 3 is the trap: subtracting a negative number adds it.
 
@@ -563,6 +565,7 @@ The determinant carries the economic content. $\det(A) \neq 0$ means the two equ
 
 ---
 
+
 ## Exercise 7 — Least squares
 
 ### Problem
@@ -583,27 +586,105 @@ She wants to fit $R = a + bP$.
 
 ### Hand calculation
 
-<!-- TODO -->
+**Task 1 — the design matrix.** The model $R = a + bP$ is written as coefficient times variable by treating the intercept as $a \times 1$. Each observation becomes one row $\begin{bmatrix} 1 & P_i \end{bmatrix}$; the column of ones is the intercept variable, equal to 1 for every observation:
+
+$$
+A = \begin{bmatrix} 1 & 50 \\ 1 & 60 \\ 1 & 80 \\ 1 & 100 \end{bmatrix}, \qquad
+y = \begin{bmatrix} 420 \\ 480 \\ 570 \\ 650 \end{bmatrix}
+$$
+
+**Shape line:** $A$ is $4 \times 2$; $\hat{x}$ is $2 \times 1$; therefore $A\hat{x}$ is $4 \times 1$, conformable with $y$. With four rows and two columns the system is **overdetermined** — four equations, two unknowns — so no exact solution exists and least squares finds the closest line.
+
+**Task 2 — a hand estimate before the machine.** Using only the two endpoint years gives a quick benchmark:
+
+$$
+\hat{b} \approx \frac{\Delta R}{\Delta P} = \frac{650 - 420}{100 - 50} = \frac{230}{50} = 4.6
+$$
+
+$$
+\hat{a} \approx 420 - \hat{b} \times 50 = 420 - 4.6 \times 50 = 420 - 230 = 190
+$$
+
+The full four-point least-squares fit returns $\hat{a} = 200.68$ and $\hat{b} = 4.54$, close to the endpoint guess. The gap arises because `lstsq` balances all four points, not just the two endpoints. The fitted line is:
+
+$$\hat{R} = 200.68 + 4.54\,P$$
+
+**Task 3 — prediction at $P = 90$, one stage per line:**
+
+1. $\hat{b} \times 90 = 4.54 \times 90 = 408.6$
+2. $\hat{a} + 408.6 = 200.68 + 408.6 = 609.28$
+
+Because $P = 90$ lies **inside** the observed range (50 to 100), this is *interpolation*, not *extrapolation*, and is therefore supported by data on both sides. The exact value from the unrounded estimates is $609.49$.
+
+**Task 4 — the four residuals, $e_i = R_i - \hat{R}_i$ (observed minus fitted):**
+
+| Year | $P$ | Observed $R$ | Fitted $\hat{R}$ | Residual $e_i$ | Size $\lvert e_i \rvert$ |
+| --- | --- | --- | --- | --- | --- |
+| 2020 | 50 | 420 | 427.8 | $-7.8$ | 7.8 |
+| 2021 | 60 | 480 | 473.08 | $+6.92$ | 6.92 |
+| 2022 | 80 | 570 | 563.88 | $+6.12$ | 6.12 |
+| 2023 | 100 | 650 | 654.68 | $-4.68$ | 4.68 |
+
+The largest error is **2020**, with $\lvert e_i \rvert = 7.8$. "Largest" compares absolute values, because size ignores direction — a negative residual can be the largest, as it is here.
 
 ### Python
 
 ```python
-# TODO: your solution here
+import numpy as np                       # arrays and numerical work
+from scipy.linalg import lstsq           # least-squares solver
+# If SciPy is missing: from numpy.linalg import lstsq
+
+prices = np.array([50.0, 60.0, 80.0, 100.0])
+revenues = np.array([420.0, 480.0, 570.0, 650.0])
+
+# Task 1: build A in named steps — ones column beside the price column
+ones_column = np.ones(4)                 # array([1., 1., 1., 1.])
+A = np.column_stack([ones_column, prices])
+print("A.shape =", A.shape)              # dimension check, expect (4, 2)
+
+# Task 2: lstsq returns four objects; the estimates are the first
+estimates = lstsq(A, revenues)[0]
+a_hat = estimates[0]
+b_hat = estimates[1]
+print("a_hat =", a_hat)
+print("b_hat =", b_hat)
+
+# Task 3: predict at P = 90 (interpolation, inside the data range)
+prediction_at_90 = a_hat + b_hat * 90
+print("prediction at P=90:", prediction_at_90)
+
+# Task 4: residuals = observed minus fitted; largest by absolute size
+fitted = A @ estimates
+residuals = revenues - fitted
+print("residuals =", residuals)
+worst_index = np.argmax(np.abs(residuals))   # argmax on |residuals|, not residuals
+print("largest error in year index:", worst_index, "(0 = 2020)")
 ```
 
 **Output:**
 
 ```
-TODO
+A.shape = (4, 2)
+a_hat = 200.67796610169498
+b_hat = 4.5423728813559325
+prediction at P=90: 609.4915254237287
+residuals = [-7.79661017  6.77966102  5.93220339 -4.91525424]
+largest error in year index: 0 (0 = 2020)
 ```
 
 ### Verification
 
-<!-- TODO -->
+- **Hand vs code:** hand residuals $(-7.8, 6.92, 6.12, -4.68)$ match the computed $(-7.80, 6.78, 5.93, -4.92)$ to rounding ✅
+- **Endpoint guess vs full fit:** the quick estimate $(\hat{a}, \hat{b}) = (190, 4.6)$ brackets the least-squares result $(200.68, 4.54)$ — the two agree in magnitude, confirming no gross error ✅
+- **Interpolation check:** the prediction $609.49$ lies between the 2022 revenue (570) and the 2023 revenue (650), as it must for $P = 90$ between 80 and 100 ✅
+- **Dimension check:** $(4 \times 2)(2 \times 1) = (4 \times 1)$, conformable with $y$ ✅
+- **Largest residual:** `np.argmax(np.abs(residuals))` returns index 0, confirming 2020 by absolute size rather than raw value ✅
 
 ### Economic interpretation
 
-<!-- TODO -->
+The slope $\hat{b} = 4.54$ states that each one-unit rise in the oil price is associated with roughly 4.5 billion EGP of additional fiscal revenue, and the intercept $\hat{a} = 200.68$ estimates the revenue the state would collect even at a zero oil price — from income tax, customs duties, and Suez Canal receipts — which is why forcing the line through the origin (omitting the ones column) would misrepresent the Egyptian fiscal structure.
+
+The residuals carry the deeper lesson. The model's worst miss falls on 2020, the year of the COVID-19 shock, when oil prices collapsed and fiscal behaviour departed from its usual pattern. A large residual concentrated on a single known event is a signal of a **structural break**, not merely arithmetic noise: the linear relationship that describes 2021 to 2023 does not hold during the pandemic. A careful analyst therefore reads residuals as questions about the world — here, "what happened in 2020?" — rather than as leftovers to be ignored. This is also why extrapolation beyond the observed price range is hazardous: the fitted line is evidence only across the interval where data support it.
 
 ---
 
